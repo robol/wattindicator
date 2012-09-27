@@ -1,11 +1,14 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-from gi.repository import GObject, Gtk, AppIndicator3, GLib, UPowerGlib
-import subprocess, re
+from gi.repository import GObject, Gtk, AppIndicator3, GLib, UPowerGlib, Gio
 
 class WattIndicator ():
     def __init__(self):
+        # Set up DBUS
+        self.bus = Gio.bus_get_sync (Gio.BusType.SYSTEM, None)
+        self.bus.signal_subscribe (None, None, None, None, None, 0, lambda *args, **kwargs : self.update_watt (), None)
+
         self.indicator = AppIndicator3.Indicator.new ("wattindicator", "indicator-messages",
                                                       AppIndicator3.IndicatorCategory.HARDWARE)
         self.menu = Gtk.Menu ()
@@ -22,24 +25,23 @@ class WattIndicator ():
         self.client = UPowerGlib.Client.new ()
 
         self.update_watt ()
-        self.timer = GLib.timeout_add (15000, self.update_watt)
         
     def update_watt (self):
-        p = subprocess.Popen (["upower", "-d"], stdout=subprocess.PIPE)
-        output = p.communicate()[0]
+        self.proxy = Gio.DBusProxy.new_sync(self.bus, Gio.DBusProxyFlags.NONE, None, 
+                                            'org.freedesktop.UPower', 
+                                            '/org/freedesktop/UPower/devices/battery_BAT1', 
+                                            'org.freedesktop.UPower.Device', 
+                                            None)
+
+        rate = self.proxy.get_cached_property ("EnergyRate").get_double ()
 
         if (self.client.get_on_battery ()):
             self.indicator.set_icon ("battery_plugged")
         else:
             self.indicator.set_icon ("battery-060-charging")
 
-        matches = re.findall (r"energy-rate:[\s|\t]+(\d+\.\d+)", output)
-        if (len(matches) == 0):
-            print("No matches")
-            return True
-        else:
-            self.indicator.set_label ("%.2f W" % float(matches[0]), "")
-            return True
+        self.indicator.set_label ("%.2f W" % rate, "")
+        return True
 
 if __name__ == "__main__":
 
