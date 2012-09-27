@@ -17,7 +17,7 @@ class WattIndicator ():
         self.indicator.set_menu (self.menu)
         self.indicator.set_status (AppIndicator3.IndicatorStatus.ACTIVE)
         self.indicator.set_attention_icon ("indicator-messages-new")
-        self.indicator.set_icon("battery_full")
+        self.indicator.set_icon("battery_plugged")
 
         self.client = UPowerGlib.Client.new ()
 
@@ -29,7 +29,7 @@ class WattIndicator ():
         output = p.communicate()[0]
 
         if (self.client.get_on_battery ()):
-            self.indicator.set_icon ("battery_full")
+            self.indicator.set_icon ("battery_plugged")
         else:
             self.indicator.set_icon ("battery-060-charging")
 
@@ -38,7 +38,7 @@ class WattIndicator ():
             print("No matches")
             return True
         else:
-            self.indicator.set_label ("%s W" % matches[0], "")
+            self.indicator.set_label ("%.2f W" % float(matches[0]), "")
             return True
 
 if __name__ == "__main__":
