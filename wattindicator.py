@@ -4,10 +4,26 @@
 from gi.repository import GObject, Gtk, AppIndicator3, GLib, UPowerGlib, Gio
 
 class WattIndicator ():
+
     def __init__(self):
         # Set up DBUS
         self.bus = Gio.bus_get_sync (Gio.BusType.SYSTEM, None)
-        self.bus.signal_subscribe (None, None, None, None, None, 0, lambda *args, **kwargs : self.update_watt (), None)
+
+        # Find the battery path
+        proxy = Gio.DBusProxy.new_sync (self.bus, Gio.DBusProxyFlags.NONE, None,
+                                        "org.freedesktop.UPower", 
+                                        "/org/freedesktop/UPower",
+                                        "org.freedesktop.UPower", None)
+        paths = proxy.EnumerateDevices ()
+        self.battery_path = None
+        for path in paths:
+            if "battery" in path:
+                self.battery_path = path
+                break
+
+        self.bus.signal_subscribe (None, 'org.freedesktop.UPower.Device', 
+                                   None, None, None, 0, 
+                                   lambda *args, **kwargs : self.update_watt (), None)
 
         self.indicator = AppIndicator3.Indicator.new ("wattindicator", "indicator-messages",
                                                       AppIndicator3.IndicatorCategory.HARDWARE)
@@ -27,9 +43,13 @@ class WattIndicator ():
         self.update_watt ()
         
     def update_watt (self):
+        if self.battery_path is None:
+            self.indicator.set_label ("No battery found", "")
+            return
+
         self.proxy = Gio.DBusProxy.new_sync(self.bus, Gio.DBusProxyFlags.NONE, None, 
                                             'org.freedesktop.UPower', 
-                                            '/org/freedesktop/UPower/devices/battery_BAT1', 
+                                            self.battery_path,
                                             'org.freedesktop.UPower.Device', 
                                             None)
 
