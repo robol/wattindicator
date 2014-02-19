@@ -43,11 +43,20 @@ class WattIndicator ():
             self.indicator.set_status (AppIndicator3.IndicatorStatus.ACTIVE)
 
         self.indicator.set_menu (self.menu)
-        self.indicator.set_icon_theme_path(
-            os.path.abspath(os.path.dirname (sys.argv[0])))
+        self.indicator.set_icon_theme_path (self.get_icon_theme_path())
         self.indicator.set_icon_full("lightning", "Lightning")
 
         self.update_watt ()
+
+    def get_icon_theme_path(self):
+        """Retrieve the correct path for the icons"""
+        basedir = os.path.abspath (os.path.dirname (sys.argv[0]))
+
+        if basedir in ("/usr/bin", "/usr/local/bin"):
+            return os.path.join (basedir, "..", "share", "wattindicator")
+        else:
+            return basedir
+
         
     def update_watt (self):
         if not self.client.get_on_battery ():
