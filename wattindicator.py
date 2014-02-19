@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+import sys, os
 from gi.repository import GObject, Gtk, AppIndicator3, GLib, UPowerGlib, Gio
 
 class WattIndicator ():
@@ -25,24 +26,36 @@ class WattIndicator ():
                                    None, None, None, 0, 
                                    lambda *args, **kwargs : self.update_watt (), None)
 
-        self.indicator = AppIndicator3.Indicator.new ("wattindicator", "indicator-messages",
+        self.indicator = AppIndicator3.Indicator.new ("wattindicator", "indicator-messages-new",
                                                       AppIndicator3.IndicatorCategory.HARDWARE)
         self.menu = Gtk.Menu ()
         self.watt_item = Gtk.MenuItem.new_with_label ("Quit")
         self.watt_item.connect ("activate", Gtk.main_quit)
         self.menu.append (self.watt_item)
 
-        self.menu.show_all ()
-        self.indicator.set_menu (self.menu)
-        self.indicator.set_status (AppIndicator3.IndicatorStatus.ACTIVE)
-        self.indicator.set_attention_icon ("indicator-messages-new")
-        self.indicator.set_icon("battery_plugged")
-
         self.client = UPowerGlib.Client.new ()
+
+        self.menu.show_all ()
+
+        if not self.client.get_on_battery ():
+            self.indicator.set_status (AppIndicator3.IndicatorStatus.PASSIVE)
+        else:
+            self.indicator.set_status (AppIndicator3.IndicatorStatus.ACTIVE)
+
+        self.indicator.set_menu (self.menu)
+        self.indicator.set_icon_theme_path(
+            os.path.abspath(os.path.dirname (sys.argv[0])))
+        self.indicator.set_icon_full("lightning", "Lightning")
 
         self.update_watt ()
         
     def update_watt (self):
+        if not self.client.get_on_battery ():
+            self.indicator.set_status (AppIndicator3.IndicatorStatus.PASSIVE)
+            return
+        else:
+            self.indicator.set_status (AppIndicator3.IndicatorStatus.ACTIVE)
+
         if self.battery_path is None:
             self.indicator.set_label ("No battery found", "")
             return
@@ -56,9 +69,11 @@ class WattIndicator ():
         rate = self.proxy.get_cached_property ("EnergyRate").get_double ()
 
         if (self.client.get_on_battery ()):
-            self.indicator.set_icon ("battery_plugged")
+            self.menu.show_all ()
+            # self.indicator.set_icon ("battery_plugged")
         else:
-            self.indicator.set_icon ("battery-060-charging")
+            self.menu.hide ()
+            # self.indicator.set_icon ("battery-060-charging")
 
         self.indicator.set_label ("%.2f W" % rate, "")
         return True
