@@ -1,3 +1,15 @@
+wattindicator (1.0-3) unstable; urgency=medium
+
+  * Other dependency fixes. 
+
+ -- Leonardo Robol <leo@robol.it>  Thu, 20 Feb 2014 11:58:10 +0100
+
+wattindicator (1.0-2) unstable; urgency=medium
+
+  * Fix some dependencies. 
+
+ -- Leonardo Robol <leo@robol.it>  Thu, 20 Feb 2014 11:57:52 +0100
+
 wattindicator (1.0-1) unstable; urgency=low
 
   * Initial release
