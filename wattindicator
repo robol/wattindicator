@@ -145,5 +145,17 @@ class WattIndicator ():
 
 if __name__ == "__main__":
 
-    wi = WattIndicator ()
-    Gtk.main ()
+    import argparse
+
+    parser = argparse.ArgumentParser (description = 'Simple power monitor')
+    parser.add_argument ('-v', '--version', help = 'Display the program version and exists', 
+                         action = "store_true")
+
+    args = parser.parse_args ()
+
+    if args.version: 
+        print ("wattindicator 1.1")
+        sys.exit (0)
+    else:
+        wi = WattIndicator ()
+        Gtk.main ()

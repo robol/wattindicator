@@ -10,6 +10,7 @@ setup(name='wattindicator',
       url='http://github.com/robol/wattindicator',
       scripts = [ 'wattindicator' ],
       data_files = [ 
-          ('share/wattindicator', [ 'lightning.png' ],)
+          ('share/wattindicator', [ 'lightning.png' ],), 
+          ('share/man/man1', [ 'wattindicator.1' ] ,)
       ]
      )
