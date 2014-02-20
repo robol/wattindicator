@@ -2,8 +2,8 @@
 
 from distutils.core import setup
 
-setup(name='Wattindicator',
-      version='1.0',
+setup(name='wattindicator',
+      version='1.1',
       description='Simple power monitor indicator for Ubuntu',
       author='Leonardo Robol',
       author_email='leo@robol.it',
