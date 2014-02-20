@@ -4,6 +4,48 @@
 import sys, os
 from gi.repository import GObject, Gtk, AppIndicator3, GLib, UPowerGlib, Gio
 
+class StartupLoader ():
+    """Simple class that manages the configuration for wattindicator
+    startup. """
+
+    WATTINDICATOR_DESKTOP_FILE = "wattindicator.desktop"
+
+    WATTINDICATOR_DESKTOP_CONTENT = """[Desktop Entry]
+Type=Application
+Exec=%s
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+Name=Watt Indicator
+Comment=Watt Indicator Applet
+""" % os.path.abspath (sys.argv[0])
+
+    def _get_autostart_dir (self):
+        xdg_config_home = os.getenv ("XDG_CONFIG_HOME")
+        if xdg_config_home is None:
+            xdg_config_home = os.path.expanduser ("~/.config")
+
+        return os.path.join (xdg_config_home, "autostart")
+
+    def _get_desktop_file_path (self):
+        return os.path.join (self._get_autostart_dir (), 
+                             self.WATTINDICATOR_DESKTOP_FILE)
+
+    def is_enabled (self):
+        """Return true if wattindicator is configured to start on session
+        startup. """
+        return os.path.exists (self._get_desktop_file_path ())
+
+    def enable (self):
+        if not self.is_enabled ():
+            with open (self._get_desktop_file_path (), "w") as h:
+                h.write (self.WATTINDICATOR_DESKTOP_CONTENT)
+    
+    def disable (self):
+        if self.is_enabled ():
+            os.remove (self._get_desktop_file_path ())
+            
+
 class WattIndicator ():
 
     def __init__(self):
@@ -26,9 +68,18 @@ class WattIndicator ():
                                    None, None, None, 0, 
                                    lambda *args, **kwargs : self.update_watt (), None)
 
+        # Load the StartupLoader that will manage the desktop file in ~/.config/autostart
+        self.startup_loader = StartupLoader()
+
         self.indicator = AppIndicator3.Indicator.new ("wattindicator", "indicator-messages-new",
                                                       AppIndicator3.IndicatorCategory.HARDWARE)
         self.menu = Gtk.Menu ()
+
+        self.start_on_session = Gtk.CheckMenuItem.new_with_label ("Start on boot")
+        self.start_on_session.connect ("toggled", self.on_start_on_session_toggled)
+        self.start_on_session.set_active (self.startup_loader.is_enabled ())
+        self.menu.append (self.start_on_session)
+
         self.watt_item = Gtk.MenuItem.new_with_label ("Quit")
         self.watt_item.connect ("activate", Gtk.main_quit)
         self.menu.append (self.watt_item)
@@ -57,6 +108,11 @@ class WattIndicator ():
         else:
             return basedir
 
+    def on_start_on_session_toggled (self, menu_item = None):
+        if self.start_on_session.get_active():
+            self.startup_loader.enable()
+        else:
+            self.startup_loader.disable()
         
     def update_watt (self):
         if not self.client.get_on_battery ():
