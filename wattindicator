@@ -154,7 +154,7 @@ if __name__ == "__main__":
     args = parser.parse_args ()
 
     if args.version: 
-        print ("wattindicator 1.1")
+        print ("wattindicator 1.2")
         sys.exit (0)
     else:
         wi = WattIndicator ()
